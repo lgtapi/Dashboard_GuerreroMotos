@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background:
+    radial-gradient(1000px 550px at 88% -10%, rgba(255, 88, 3, 0.10) 0%, transparent 60%),
+    radial-gradient(800px 450px at -10% 15%, rgba(255, 88, 3, 0.06) 0%, transparent 55%),
+    #0d0d0d;
+  min-height: 100vh;
+}
+
+/* ---- Impresión / Descargar PDF ---- */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+  body {
+    background: #ffffff !important;
+    color: #0d0d0d !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  /* tarjetas y paneles: fondo blanco, borde gris claro, texto oscuro */
+  .rounded-2xl,
+  .rounded-xl {
+    background: #ffffff !important;
+    border-color: #d9d9d9 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+  h1, h2, h3, p, span, div {
+    color: #0d0d0d !important;
+  }
+  .text-brand {
+    color: #ff5803 !important;
+  }
+  .text-up {
+    color: #16a34a !important;
+  }
+  .text-down {
+    color: #dc2626 !important;
+  }
+}
