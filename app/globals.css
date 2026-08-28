@@ -3,10 +3,7 @@
 @tailwind utilities;
 
 body {
-  background:
-    radial-gradient(1000px 550px at 88% -10%, rgba(255, 88, 3, 0.10) 0%, transparent 60%),
-    radial-gradient(800px 450px at -10% 15%, rgba(255, 88, 3, 0.06) 0%, transparent 55%),
-    #ffffff;
+  background: #ffffff;
   min-height: 100vh;
 }
 

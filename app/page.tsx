@@ -297,7 +297,7 @@ export default function DashboardPage() {
         </>
       )}
 
-      <footer className="mt-14 flex items-center justify-center border-t border-line pt-5 text-xs text-paper/45 print:text-black/60">
+      <footer className="mt-14 flex items-center justify-center border-t border-line pt-5 text-xs text-neutral-500 print:text-black">
         <span className="font-display uppercase tracking-wide">Elaborado por Carlos García</span>
       </footer>
     </div>
