@@ -194,7 +194,7 @@ export default function DashboardPage() {
 
         <div className="relative flex flex-wrap items-center justify-between gap-5 px-6 py-6">
           <div className="flex items-center gap-4">
-            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-line bg-asphalt-900 p-1.5 shadow-brand print:border-black print:shadow-none">
+            <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-line bg-white p-1.5 shadow-brand print:border-black print:shadow-none">
               <Image src="/logo.png" alt="Guerrero Motos" width={56} height={56} className="h-full w-full object-contain" priority />
             </div>
             <div>
@@ -236,7 +236,7 @@ export default function DashboardPage() {
           {/* Comparativo general entre plataformas */}
           {plataformasChartData.length > 0 && (
             <>
-              <SectionHeading tag="General" title="Visualizaciones por plataforma" iconSrc="/logo.png" />
+              <SectionHeading tag="General" title="Visualizaciones por plataforma" iconSrc="/logo.png" iconBg="bg-white" />
               <PlatformCompareChart title="" data={plataformasChartData} labelA={labelA} labelB={labelB} />
             </>
           )}

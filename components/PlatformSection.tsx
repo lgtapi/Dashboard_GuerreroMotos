@@ -88,14 +88,16 @@ export function SectionHeading({
   tag,
   title,
   iconSrc,
+  iconBg = "bg-white",
 }: {
   tag: string;
   title: string;
   iconSrc: string;
+  iconBg?: string;
 }) {
   return (
     <div className="mb-3.5 mt-9 flex items-center gap-3">
-      <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg bg-asphalt-700">
+      <div className={`flex h-8 w-8 items-center justify-center overflow-hidden rounded-lg ${iconBg}`}>
         <Image src={iconSrc} alt={tag} width={22} height={22} className="object-contain" />
       </div>
       <h2 className="font-display text-xl font-bold uppercase italic tracking-wide">{title}</h2>
