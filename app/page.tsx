@@ -178,7 +178,7 @@ export default function DashboardPage() {
     [leadsDetalle.data, mesA, mesB]
   );
   const leadsRecomiendaData = useMemo(
-    () => compareCountsByField(leadsDetalle.data, "Recomienda", mesA, mesB, "Mes"),
+    () => compareCountsByField(leadsDetalle.data, "¿A quien vio o quien lo atendio?", mesA, mesB, "Mes"),
     [leadsDetalle.data, mesA, mesB]
   );
 
@@ -290,7 +290,7 @@ export default function DashboardPage() {
                 <CompareBarChart title="¿Cómo nos conoció? (canal)" data={leadsCanalData} labelA={labelA} labelB={labelB} />
                 <CompareBarChart title="Tipo de gestión" data={leadsTipoGestionData} labelA={labelA} labelB={labelB} />
                 <CompareBarChart title="Moto de interés (más consultadas)" data={leadsMotoData} labelA={labelA} labelB={labelB} />
-                <CompareBarChart title="¿Recomienda a Guerrero Motos?" data={leadsRecomiendaData} labelA={labelA} labelB={labelB} />
+                <CompareBarChart title="¿A quien vio o quien lo atendio?" data={leadsRecomiendaData} labelA={labelA} labelB={labelB} />
               </div>
             </>
           )}
