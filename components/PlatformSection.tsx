@@ -1,13 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { MetricCard } from "@/components/MetricCard";
+import { MetricTrendChart } from "@/components/MetricTrendChart";
 import {
   SheetRow,
   findRowByMonth,
   mesLabel,
   metricKeysFromRow,
   sheetHasRealData,
+  unidadPeriodo,
 } from "@/lib/types";
 
 const LABELS: Record<string, string> = {
@@ -41,6 +44,7 @@ export function PlatformSection({
   mesB,
   dateField = "Fecha",
   platformFilter,
+  graficas = false,
 }: {
   tag: string;
   title: string;
@@ -50,7 +54,12 @@ export function PlatformSection({
   mesB: string;
   dateField?: "Fecha" | "Mes";
   platformFilter?: string;
+  graficas?: boolean;
 }) {
+  const [seleccion, setSeleccion] = useState<string[]>([]);
+  const alternar = (key: string) =>
+    setSeleccion((actual) => (actual.includes(key) ? actual.filter((item) => item !== key) : [...actual, key]));
+
   const scoped = platformFilter ? (rows || []).filter((r) => r.Plataforma === platformFilter) : rows;
 
   if (!sheetHasRealData(scoped)) return null;
@@ -61,9 +70,37 @@ export function PlatformSection({
 
   if (keys.length === 0) return null;
 
+  const serie = (key: string) =>
+    (scoped ?? [])
+      .map((row) => ({ periodo: String(row[dateField]), valor: row[key] }))
+      .filter((item): item is { periodo: string; valor: number } => typeof item.valor === "number")
+      .sort((a, b) => (a.periodo < b.periodo ? -1 : a.periodo > b.periodo ? 1 : 0));
+  const marcadas = keys.filter((key) => seleccion.includes(key));
+
   return (
     <>
       <SectionHeading tag={tag} title={title} iconSrc={iconSrc} />
+      {graficas && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-neutral-500 print:hidden">
+          <span>Toca una métrica para ver su gráfica</span>
+          <button
+            type="button"
+            onClick={() => setSeleccion(keys)}
+            className="rounded-full border border-line bg-asphalt-800 px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-wide text-paper transition-colors hover:border-brand hover:text-brand"
+          >
+            Todas
+          </button>
+          {marcadas.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSeleccion([])}
+              className="rounded-full border border-line bg-asphalt-800 px-3.5 py-1 font-display text-xs font-semibold uppercase tracking-wide text-paper transition-colors hover:border-brand hover:text-brand"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
         {keys.map((key) => {
           const vA = rowA?.[key];
@@ -76,10 +113,27 @@ export function PlatformSection({
               labelB={mesLabel(mesB)}
               valueA={typeof vA === "number" ? vA : null}
               valueB={typeof vB === "number" ? vB : null}
+              selected={graficas && seleccion.includes(key)}
+              onClick={graficas ? () => alternar(key) : undefined}
             />
           );
         })}
       </div>
+      {graficas && marcadas.length > 0 && (
+        <div className="mt-4 grid grid-cols-1 gap-3.5 lg:grid-cols-2">
+          {marcadas.map((key) => (
+            <MetricTrendChart
+              key={key}
+              title={LABELS[key] || key}
+              unidad={unidadPeriodo(mesA)}
+              data={serie(key)}
+              mesA={mesA}
+              mesB={mesB}
+              onClose={() => alternar(key)}
+            />
+          ))}
+        </div>
+      )}
     </>
   );
 }

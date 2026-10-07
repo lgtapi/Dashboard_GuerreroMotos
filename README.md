@@ -17,6 +17,20 @@ solo — no hay que tocar código ni redeployar:
 - Cada pestaña se lee directo desde Google Sheets, sin caché.
 - El selector de meses se arma dinámicamente a partir de las fechas que
   encuentra en `Redes_LookerStudio`.
+- El reporte se puede ver por mes, trimestre o año. En las vistas agregadas,
+  alcance, usuarios y tasas se promedian; las demás métricas se suman, excepto
+  "Total usuarios", que conserva el valor del último mes del periodo.
+- Las tarjetas de Instagram, Facebook y TikTok permiten abrir gráficas de
+  evolución. La gráfica general permite comparar todas las plataformas o
+  filtrar una sola.
+- Los trimestres y años incompletos se identifican en el selector. Revisa esa
+  cobertura antes de comparar periodos parciales.
+
+El lector de Google Sheets también corrige automáticamente posibles valores de
+miles mal ingresados como decimales en columnas de conteo (por ejemplo,
+`262.817` interpretado como `262,817`). Cada corrección se registra en la
+consola del servidor. Esta opción se puede desactivar cambiando
+`CORREGIR_MILES` en `lib/sheets.ts` a `false`.
 
 ## 1. Preparar el Google Sheet
 
@@ -77,4 +91,3 @@ Despliega en [Vercel](https://vercel.com):
   el patrón de `TikTok_Historico` en el Sheet y agrega una línea más de
   `<PlatformSection ... />` en `app/page.tsx` apuntando a esa pestaña — se
   autooculta sola mientras no tenga datos, igual que las demás.
-

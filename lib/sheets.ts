@@ -40,6 +40,45 @@ function extractCellValue(cell: { v: unknown; f?: string } | null): string | num
   return cell.f ?? null;
 }
 
+export const CORREGIR_MILES = true;
+
+const COLUMNAS_DE_CONTEO = [
+  "visualiz", "alcance", "interac", "clic", "visita", "seguidor", "impresion",
+  "sesion", "usuario", "pagina", "página", "mensaje", "conversacion",
+  "conversación", "publicacion", "publicación", "historia", "conversion",
+  "conversión", "reproduc",
+];
+
+function esColumnaDeConteo(columna: string): boolean {
+  const nombre = columna.toLowerCase();
+  if (nombre.includes("var") || nombre.includes("tasa") || nombre.includes("promedio")) return false;
+  return COLUMNAS_DE_CONTEO.some((parte) => nombre.includes(parte));
+}
+
+export function corregirMiles(rows: SheetRow[], tab = ""): SheetRow[] {
+  if (!CORREGIR_MILES) return rows;
+  const cambios: string[] = [];
+  const corregidas = rows.map((row) => {
+    const corregida: SheetRow = { ...row };
+    for (const [columna, valor] of Object.entries(corregida)) {
+      if (
+        typeof valor === "number" &&
+        esColumnaDeConteo(columna) &&
+        !Number.isInteger(valor) &&
+        Math.abs(valor) < 1000
+      ) {
+        corregida[columna] = Math.round(valor * 1000);
+        cambios.push(`${columna}: ${valor} -> ${corregida[columna]}`);
+      }
+    }
+    return corregida;
+  });
+  if (cambios.length) {
+    console.warn(`[${tab}] ${cambios.length} valor(es) con formato de miles corregidos:`, cambios.slice(0, 20));
+  }
+  return corregidas;
+}
+
 export async function fetchSheetTab(tab: string): Promise<SheetRow[]> {
   const url = gvizUrl(tab);
   const res = await fetch(url, { cache: "no-store" });
@@ -72,5 +111,5 @@ export async function fetchSheetTab(tab: string): Promise<SheetRow[]> {
     return obj;
   });
 
-  return rows;
+  return corregirMiles(rows, tab);
 }

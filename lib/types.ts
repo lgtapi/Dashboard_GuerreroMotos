@@ -5,11 +5,26 @@ export const MESES_ES = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
-// "2026-05-01" -> "Mayo 2026"
+// "2026-05-01" -> "Mayo 2026" | "2026-T3" -> "T3 2026" | "2026" -> "2026"
 export function mesLabel(isoDate: string): string {
+  const trimestre = /^(\d{4})-T([1-4])$/.exec(isoDate);
+  if (trimestre) return `T${trimestre[2]} ${trimestre[1]}`;
+  if (/^\d{4}$/.test(isoDate)) return isoDate;
   const [y, m] = isoDate.split("-").map(Number);
   if (!y || !m) return isoDate;
   return `${MESES_ES[m - 1]} ${y}`;
+}
+
+export function mesLabelCorto(key: string): string {
+  const mes = /^(\d{4})-(\d{2})-\d{2}$/.exec(key);
+  if (!mes) return mesLabel(key);
+  return `${MESES_ES[Number(mes[2]) - 1].slice(0, 3)} ${mes[1].slice(2)}`;
+}
+
+export function unidadPeriodo(key: string): "mes" | "trimestre" | "año" {
+  if (/^\d{4}-T[1-4]$/.test(key)) return "trimestre";
+  if (/^\d{4}$/.test(key)) return "año";
+  return "mes";
 }
 
 export function sortIsoDatesAsc(dates: string[]): string[] {
