@@ -55,9 +55,6 @@ export default function DashboardPage() {
   const [vista, setVista] = useState<Vista>("mensual");
 
   const redesRaw = useSheetTab<SheetRow[]>("Redes_LookerStudio");
-  const instagramRaw = useSheetTab<SheetRow[]>("Instagram_Historico");
-  const facebookRaw = useSheetTab<SheetRow[]>("Facebook_Historico");
-  const tiktokRaw = useSheetTab<SheetRow[]>("TikTok_Historico");
   const fbFormatosRaw = useSheetTab<SheetRow[]>("Facebook_Formatos");
   const waHistoricoRaw = useSheetTab<SheetRow[]>("WhatsApp_Historico");
   const waCanalRaw = useSheetTab<SheetRow[]>("WhatsApp_Canal");
@@ -67,9 +64,6 @@ export default function DashboardPage() {
   const campanasRaw = useSheetTab<SheetRow[]>("Campanas_Historico");
 
   const redes = { ...redesRaw, data: usePeriodo(redesRaw.data, "Mes", vista) };
-  const instagram = { ...instagramRaw, data: usePeriodo(instagramRaw.data, "Fecha", vista) };
-  const facebook = { ...facebookRaw, data: usePeriodo(facebookRaw.data, "Fecha", vista) };
-  const tiktok = { ...tiktokRaw, data: usePeriodo(tiktokRaw.data, "Fecha", vista) };
   const fbFormatos = {
     ...fbFormatosRaw,
     data: usePeriodo(fbFormatosRaw.data, "Mes", vista, ["Formato", "Categoría"]),
@@ -282,11 +276,11 @@ export default function DashboardPage() {
             </>
           )}
 
-          {/* Instagram */}
-          <PlatformSection tag="Instagram" title="Instagram" iconSrc="/icon-instagram.png" rows={instagram.data} mesA={mesA} mesB={mesB} graficas />
+          {/* Instagram · datos de Redes_LookerStudio */}
+          <PlatformSection tag="Instagram" title="Instagram" iconSrc="/icon-instagram.png" rows={redes.data} mesA={mesA} mesB={mesB} dateField="Mes" platformFilter="Instagram" graficas />
 
           {/* Facebook */}
-          <PlatformSection tag="Facebook" title="Facebook" iconSrc="/icon-facebook.png" rows={facebook.data} mesA={mesA} mesB={mesB} graficas />
+          <PlatformSection tag="Facebook" title="Facebook" iconSrc="/icon-facebook.png" rows={redes.data} mesA={mesA} mesB={mesB} dateField="Mes" platformFilter="Facebook" graficas />
           {formatosData.length > 0 && (
             <div className="mt-4">
               <CompareBarChart title="Visualizaciones por formato de contenido" data={formatosData} labelA={labelA} labelB={labelB} />
@@ -304,7 +298,7 @@ export default function DashboardPage() {
           <PlatformSection tag="Campañas FB" title="Campañas · Facebook" iconSrc="/icon-facebook.png" rows={campanas.data} mesA={mesA} mesB={mesB} dateField="Fecha" platformFilter="Facebook" />
 
           {/* TikTok */}
-          <PlatformSection tag="TikTok" title="TikTok" iconSrc="/icon-tiktok.png" rows={tiktok.data} mesA={mesA} mesB={mesB} graficas />
+          <PlatformSection tag="TikTok" title="TikTok" iconSrc="/icon-tiktok.png" rows={redes.data} mesA={mesA} mesB={mesB} dateField="Mes" platformFilter="TikTok" graficas />
 
           {/* WhatsApp */}
           <PlatformSection tag="WhatsApp" title="WhatsApp" iconSrc="/icon-whatsapp.png" rows={waHistorico.data} mesA={mesA} mesB={mesB} />

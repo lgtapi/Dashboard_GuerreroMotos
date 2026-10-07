@@ -33,7 +33,19 @@ const LABELS: Record<string, string> = {
   CPC: "CPC",
   Resultados: "Resultados",
   "Costo por resultado": "Costo por resultado",
+  // Columnas de Redes_LookerStudio
+  Visualizaciones: "Visualizaciones",
+  Alcance: "Alcance",
+  Interacciones: "Interacciones",
+  Clics_en_enlace: "Clics en el enlace",
+  Visitas_perfil: "Visitas al perfil",
+  Seguidores_nuevos: "Seguidores nuevos",
+  Historias_publicadas: "Historias publicadas",
+  Publicaciones: "Publicaciones",
 };
+
+const mismaPlataforma = (valor: unknown, filtro: string) =>
+  String(valor ?? "").trim().toLowerCase() === filtro.trim().toLowerCase();
 
 export function PlatformSection({
   tag,
@@ -60,7 +72,7 @@ export function PlatformSection({
   const alternar = (key: string) =>
     setSeleccion((actual) => (actual.includes(key) ? actual.filter((item) => item !== key) : [...actual, key]));
 
-  const scoped = platformFilter ? (rows || []).filter((r) => r.Plataforma === platformFilter) : rows;
+  const scoped = platformFilter ? (rows || []).filter((r) => mismaPlataforma(r.Plataforma, platformFilter)) : rows;
 
   if (!sheetHasRealData(scoped)) return null;
 

@@ -74,7 +74,11 @@ export function findRowByMonth(
   dateField: "Fecha" | "Mes" = "Fecha"
 ): SheetRow | undefined {
   if (!rows) return undefined;
-  return rows.find((r) => String(r[dateField]) === mes);
+  const delMes = rows.filter((r) => String(r[dateField]) === mes);
+  // Si el mes tiene varias filas (p. ej. un corte parcial vacío y el cierre),
+  // se usa la que trae más valores numéricos, no simplemente la primera.
+  const numericos = (r: SheetRow) => Object.values(r).filter((v) => typeof v === "number").length;
+  return delMes.sort((a, b) => numericos(b) - numericos(a))[0];
 }
 
 // Cuenta ocurrencias de un campo (ej. Tipo_gestion, Moto_interes) en dos meses,
