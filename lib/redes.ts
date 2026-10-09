@@ -34,7 +34,14 @@ export const ETIQUETAS_METRICA: Record<string, string> = {
   Historias_publicadas: "Historias publicadas",
   Publicaciones: "Publicaciones",
 };
-export const etiquetaMetrica = (k: string) => ETIQUETAS_METRICA[k] ?? k.replace(/_/g, " ");
+export const etiquetaMetrica = (k: string) => ETIQUETAS_METRICA[k] ?? k.replace(/_/g, " ").replace(/\s*-\s*/g, " / ");
+
+// Busca una métrica por patrón, tolerando nombres distintos en la hoja
+// ("Total seguidores", "Seguidores_totales", "Interacciones (likes)"…).
+export function buscarMetrica(metricas: string[], patron: RegExp): string | null {
+  return metricas.find((m) => patron.test(m.normalize("NFD").replace(/[\u0300-\u036f]/g, ""))) ?? null;
+}
+export const PATRON_SEGUIDORES_TOTALES = /total\w*[\s_]*seguid|seguid\w*[\s_]*total/i;
 
 const igual = (a: unknown, b: string) => String(a ?? "").trim().toLowerCase() === b.trim().toLowerCase();
 

@@ -105,7 +105,9 @@ export function corregirMiles(rows: SheetRow[], tab = ""): SheetRow[] {
   return corregidas;
 }
 
-export async function fetchSheetTab(tab: string): Promise<SheetRow[]> {
+type Tabla = { cols: string[]; rows: ({ c: ({ v: unknown; f?: string } | null)[] } | null)[]; firma: string };
+
+async function leerTabla(tab: string): Promise<Tabla> {
   const url = gvizUrl(tab);
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
@@ -125,17 +127,42 @@ export async function fetchSheetTab(tab: string): Promise<SheetRow[]> {
     throw new Error(`Google Sheets devolvió un error para "${tab}": ${msg}`);
   }
 
+  // Los encabezados se limpian de espacios (" Seguidores Nuevos" -> "Seguidores Nuevos")
   const cols: string[] = data.table.cols.map(
-    (c: { label?: string; id: string }, i: number) => c.label || c.id || `col_${i}`
+    (c: { label?: string; id: string }, i: number) => (c.label || c.id || `col_${i}`).trim()
   );
+  const rows = data.table.rows || [];
+  return { cols, rows, firma: JSON.stringify([cols, rows.slice(0, 5)]) };
+}
 
-  const rows: SheetRow[] = (data.table.rows || []).map((r: { c: ({ v: unknown; f?: string } | null)[] }) => {
+// OJO: cuando se pide una pestaña que NO existe, Google no da error: devuelve
+// la PRIMERA hoja del archivo. Para no mostrar datos equivocados, se compara
+// con lo que Google devuelve para una pestaña inventada.
+const PESTANA_INEXISTENTE = "__pestana_que_no_existe__";
+let respaldo: { firma: string; hasta: number } | null = null;
+
+async function firmaDeRespaldo(): Promise<string> {
+  if (respaldo && respaldo.hasta > Date.now()) return respaldo.firma;
+  const { firma } = await leerTabla(PESTANA_INEXISTENTE);
+  respaldo = { firma, hasta: Date.now() + 60_000 };
+  return firma;
+}
+
+export type ResultadoPestana = { rows: SheetRow[]; encontrada: boolean };
+
+export async function fetchSheetTab(tab: string): Promise<ResultadoPestana> {
+  const [tabla, firmaRespaldo] = await Promise.all([leerTabla(tab), firmaDeRespaldo().catch(() => "")]);
+  // Si coincide con la respuesta de "pestaña inexistente", lo más probable es que
+  // la pestaña pedida no exista con ese nombre exacto.
+  const encontrada = tabla.firma !== firmaRespaldo;
+
+  const rows: SheetRow[] = tabla.rows.map((r) => {
     const obj: SheetRow = {};
-    cols.forEach((colName, i) => {
-      obj[colName] = extractCellValue(r.c[i]);
+    tabla.cols.forEach((colName, i) => {
+      obj[colName] = extractCellValue(r?.c?.[i] ?? null);
     });
     return obj;
   });
 
-  return corregirMiles(normalizarFechas(rows), tab);
+  return { rows: corregirMiles(normalizarFechas(rows), tab), encontrada };
 }

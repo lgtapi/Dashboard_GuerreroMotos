@@ -15,16 +15,26 @@ import { NetworkCards } from "@/components/NetworkCards";
 import { LeadsCompact } from "@/components/LeadsCompact";
 import { PlatformSection, SectionHeading } from "@/components/PlatformSection";
 import { prepararLeads } from "@/lib/leads";
-import { etiquetaMetrica, metricasRedes, plataformasRedes, valorRed } from "@/lib/redes";
+import {
+  PATRON_SEGUIDORES_TOTALES,
+  buscarMetrica,
+  etiquetaMetrica,
+  metricasRedes,
+  plataformasRedes,
+  valorRed,
+} from "@/lib/redes";
 import { SheetRow, fmtNumber, mesLabel, sortIsoDatesAsc, sheetHasRealData } from "@/lib/types";
 import { Vista, coberturaPeriodos, usePeriodo } from "@/lib/periodos";
 
 const POLL_MS = 30_000;
 
-type FetchState<T> = { data: T | null; error: string | null; loading: boolean };
+type FetchState<T> = { data: T | null; error: string | null; loading: boolean; encontrada: boolean };
 
-function useSheetTab<T = SheetRow[]>(tab: string) {
-  const [state, setState] = useState<FetchState<T>>({ data: null, error: null, loading: true });
+// aceptarPrimeraHoja: Google devuelve la primera hoja del archivo cuando la
+// pestaña pedida no existe. Para la hoja principal (que suele ser la primera)
+// se aceptan esos datos; para las demás se tratan como "pestaña no encontrada".
+function useSheetTab<T = SheetRow[]>(tab: string, aceptarPrimeraHoja = false) {
+  const [state, setState] = useState<FetchState<T>>({ data: null, error: null, loading: true, encontrada: true });
 
   useEffect(() => {
     let cancelled = false;
@@ -34,13 +44,18 @@ function useSheetTab<T = SheetRow[]>(tab: string) {
         const json = await res.json();
         if (cancelled) return;
         if (!res.ok) {
-          setState({ data: null, error: json.error || "Error desconocido", loading: false });
+          setState({ data: null, error: json.error || "Error desconocido", loading: false, encontrada: true });
           return;
         }
-        setState({ data: json.rows as T, error: null, loading: false });
+        const encontrada = json.encontrada !== false;
+        if (!encontrada && !aceptarPrimeraHoja) {
+          setState({ data: null, error: `No se encontró la pestaña "${tab}"`, loading: false, encontrada: false });
+          return;
+        }
+        setState({ data: json.rows as T, error: null, loading: false, encontrada });
       } catch (e) {
         if (cancelled) return;
-        setState({ data: null, error: e instanceof Error ? e.message : "Error de red", loading: false });
+        setState({ data: null, error: e instanceof Error ? e.message : "Error de red", loading: false, encontrada: true });
       }
     }
     load();
@@ -49,7 +64,7 @@ function useSheetTab<T = SheetRow[]>(tab: string) {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [tab]);
+  }, [tab, aceptarPrimeraHoja]);
 
   return state;
 }
@@ -57,8 +72,8 @@ function useSheetTab<T = SheetRow[]>(tab: string) {
 export default function DashboardPage() {
   const [vista, setVista] = useState<Vista>("mensual");
 
-  const redesRaw = useSheetTab<SheetRow[]>("Redes_LookerStudio");
-  const redes2025Raw = useSheetTab<SheetRow[]>("2025_Redes_LookerStudio");
+  const redesRaw = useSheetTab<SheetRow[]>("Redes_LookerStudio", true);
+  const redes2025Raw = useSheetTab<SheetRow[]>("2025_Redes_LookerStudio", true);
   const [verInteranual, setVerInteranual] = useState(false);
   const creadoresRaw = useSheetTab<SheetRow[]>("creadores_contenido");
   const [verCreadores, setVerCreadores] = useState(false);
@@ -202,7 +217,7 @@ export default function DashboardPage() {
   // tiene; si no, Visualizaciones.
   const metricaGeneral = useMemo(() => {
     const ms = metricasRedes(redes.data);
-    return ms.includes("Seguidores_totales") ? "Seguidores_totales" : ms.includes("Visualizaciones") ? "Visualizaciones" : ms[0] ?? "Visualizaciones";
+    return buscarMetrica(ms, PATRON_SEGUIDORES_TOTALES) ?? buscarMetrica(ms, /^visualiz/i) ?? ms[0] ?? "Visualizaciones";
   }, [redes.data]);
 
   // Plataforma con el mayor valor de la métrica principal en el periodo B

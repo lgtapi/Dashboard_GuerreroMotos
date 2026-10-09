@@ -1,9 +1,10 @@
 "use client";
 
 import { fmtNumber, fmtPct, mesLabel, pctChange, type SheetRow } from "@/lib/types";
-import { etiquetaMetrica, metricasRedes, totalRedes } from "@/lib/redes";
+import { PATRON_SEGUIDORES_TOTALES, buscarMetrica, etiquetaMetrica, metricasRedes, totalRedes } from "@/lib/redes";
 
-const PREFERIDAS = ["Visualizaciones", "Alcance", "Interacciones", "Seguidores_totales", "Seguidores_nuevos"];
+// Orden preferido de los indicadores (por patrón, para tolerar nombres distintos)
+const PREFERIDAS = [/^visualiz/i, PATRON_SEGUIDORES_TOTALES, /^interacc/i, /^alcance/i, /seguid\w*[\s_]*nuev/i];
 const ACENTOS = ["#ff5803", "#e09200", "#cc4602", "#a8927a"];
 
 // Cuatro indicadores (suma de todas las redes) en tarjetas blancas, con una
@@ -20,10 +21,8 @@ export function KpiTiles({
   mesB: string;
 }) {
   const disponibles = metricasRedes(rows);
-  const elegidas = [
-    ...PREFERIDAS.filter((m) => disponibles.includes(m)),
-    ...disponibles.filter((m) => !PREFERIDAS.includes(m)),
-  ].slice(0, 4);
+  const preferidas = PREFERIDAS.map((p) => buscarMetrica(disponibles, p)).filter((m): m is string => !!m);
+  const elegidas = [...new Set([...preferidas, ...disponibles])].slice(0, 4);
   if (elegidas.length === 0) return null;
 
   return (
