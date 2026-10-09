@@ -88,7 +88,7 @@ export function MetricCard({
               change >= 0 ? "bg-up/15 text-up" : "bg-down/15 text-down"
             }`}
           >
-            {change >= 0 ? "▲" : "▼"} {fmtPct(Math.abs(change))}
+            {change >= 0 ? "▲" : "▼"} {fmtPct(Math.abs(change)).replace("+", "")}
           </span>
         </div>
       )}

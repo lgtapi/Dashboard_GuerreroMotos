@@ -49,7 +49,7 @@ export function CompareBarChart({
             />
             <Legend wrapperStyle={{ fontSize: 12, color: "#a3a3a3" }} />
             <Bar dataKey="a" name={labelA} fill="#ff5803" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="b" name={labelB} fill="#3fd6c6" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="b" name={labelB} fill="#ffb23c" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

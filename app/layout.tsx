@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body className="bg-white font-sans text-neutral-900">{children}</body>
+      <body className="bg-asphalt-900 font-sans text-paper">{children}</body>
     </html>
   );
 }
