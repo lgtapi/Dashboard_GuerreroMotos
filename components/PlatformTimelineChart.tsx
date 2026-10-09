@@ -23,13 +23,7 @@ import {
   colorDePeriodo,
 } from "@/components/MetricTrendChart";
 
-const COLOR_PLATAFORMA: Record<string, string> = {
-  facebook: "#4c8dff",
-  instagram: "#e1306c",
-  tiktok: "#3fd6c6",
-  whatsapp: "#4ade80",
-};
-const COLORES_EXTRA = ["#a78bfa", "#facc15", "#f472b6", "#94a3b8"];
+import { colorPlataforma, etiquetaMetrica, metricasRedes } from "@/lib/redes";
 
 const corto = (numero: number) =>
   Math.abs(numero) >= 1000
@@ -38,7 +32,7 @@ const corto = (numero: number) =>
 
 export function PlatformTimelineChart({
   rows,
-  metrica = "Visualizaciones",
+  metrica: metricaInicial = "Visualizaciones",
   mesA,
   mesB,
 }: {
@@ -48,6 +42,13 @@ export function PlatformTimelineChart({
   mesB: string;
 }) {
   const [seleccion, setSeleccion] = useState("Todas");
+  const metricasDisponibles = useMemo(() => metricasRedes(rows), [rows]);
+  const [metricaElegida, setMetricaElegida] = useState(metricaInicial);
+  const metrica = metricasDisponibles.includes(metricaElegida)
+    ? metricaElegida
+    : metricasDisponibles.includes(metricaInicial)
+      ? metricaInicial
+      : metricasDisponibles[0] ?? metricaInicial;
 
   const { plataformas, filas } = useMemo(() => {
     const todas = [...new Set(rows.map((row) => String(row.Plataforma ?? "")))].filter(Boolean);
@@ -77,9 +78,7 @@ export function PlatformTimelineChart({
 
   const activa = plataformas.includes(seleccion) ? seleccion : "Todas";
   const unidad = unidadPeriodo(mesA);
-  const colorDe = (plataforma: string) =>
-    COLOR_PLATAFORMA[plataforma.toLowerCase()] ??
-    COLORES_EXTRA[plataformas.indexOf(plataforma) % COLORES_EXTRA.length];
+  const colorDe = (plataforma: string) => colorPlataforma(plataforma, plataformas.indexOf(plataforma));
   const cortoA = mesLabelCorto(mesA);
   const cortoB = mesLabelCorto(mesB);
   const hayEntre = filas.some(
@@ -107,6 +106,24 @@ export function PlatformTimelineChart({
 
   return (
     <div className="rounded-2xl border border-line bg-asphalt-800 p-5">
+      {metricasDisponibles.length > 1 && (
+        <div className="mb-2 flex flex-wrap items-center gap-2 print:hidden" role="group" aria-label="Métrica">
+          <span className="mr-1 font-display text-xs uppercase tracking-wide text-paper/55">Métrica</span>
+          {metricasDisponibles.map((m) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={m === metrica}
+              onClick={() => setMetricaElegida(m)}
+              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                m === metrica ? "border-paper bg-paper font-semibold text-asphalt-900" : "border-line text-paper/65 hover:text-paper"
+              }`}
+            >
+              {etiquetaMetrica(m)}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="mb-3 flex flex-wrap items-center gap-2 print:hidden" role="group" aria-label="Filtrar por plataforma">
         <span className="mr-1 font-display text-xs uppercase tracking-wide text-paper/55">Plataforma</span>
         {chip("Todas")}
@@ -157,7 +174,7 @@ export function PlatformTimelineChart({
       </div>
 
       <p className="mb-2 font-display text-sm uppercase tracking-wide text-paper/70">
-        {metrica} · {activa === "Todas" ? "todas las plataformas" : activa} · por {unidad}
+        {etiquetaMetrica(metrica)} · {activa === "Todas" ? "todas las plataformas" : activa} · por {unidad}
       </p>
 
       <div className="h-80 w-full">
