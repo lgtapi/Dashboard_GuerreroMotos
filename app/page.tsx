@@ -6,6 +6,9 @@ import { MonthSwitcher } from "@/components/MonthSwitcher";
 import { CompareBarChart } from "@/components/CompareBarChart";
 import { OverlayCompareChart } from "@/components/OverlayCompareChart";
 import { MonthlyYearCompare } from "@/components/MonthlyYearCompare";
+import { LeadsStats } from "@/components/LeadsStats";
+import { CreatorsStats } from "@/components/CreatorsStats";
+import { AdvisorsStats } from "@/components/AdvisorsStats";
 import { PlatformCompareChart } from "@/components/PlatformCompareChart";
 import { PlatformTimelineChart } from "@/components/PlatformTimelineChart";
 import { PlatformSection, SectionHeading } from "@/components/PlatformSection";
@@ -58,6 +61,13 @@ export default function DashboardPage() {
 
   const redesRaw = useSheetTab<SheetRow[]>("Redes_LookerStudio");
   const redes2025Raw = useSheetTab<SheetRow[]>("2025_Redes_LookerStudio");
+  const [verEstadisticasLeads, setVerEstadisticasLeads] = useState(false);
+  const creadoresRaw = useSheetTab<SheetRow[]>("creadores_contenido");
+  const [verCreadores, setVerCreadores] = useState(false);
+  const asignacionesRaw = useSheetTab<SheetRow[]>("Asignación_Asesores");
+  const [verAsesores, setVerAsesores] = useState(false);
+  // Mientras una de estas vistas está abierta se ocultan las demás secciones
+  const vistaEspecial = verEstadisticasLeads || verCreadores || verAsesores;
   const fbFormatosRaw = useSheetTab<SheetRow[]>("Facebook_Formatos");
   const waHistoricoRaw = useSheetTab<SheetRow[]>("WhatsApp_Historico");
   const waCanalRaw = useSheetTab<SheetRow[]>("WhatsApp_Canal");
@@ -326,6 +336,95 @@ export default function DashboardPage() {
             />
           </div>
 
+          {/* Botón: estadísticas de la hoja Leads_Detalle */}
+          <div className="-mt-4 mb-6 flex flex-wrap gap-3 print:hidden">
+            <button
+              type="button"
+              aria-expanded={verEstadisticasLeads}
+              onClick={() => {
+                setVerEstadisticasLeads((v) => !v);
+                setVerCreadores(false);
+                setVerAsesores(false);
+              }}
+              className={`flex items-center gap-2 rounded-full border px-4 py-2 font-display text-sm font-semibold uppercase tracking-wide transition-colors ${
+                verEstadisticasLeads
+                  ? "border-brand bg-brand text-asphalt-900"
+                  : "border-line bg-asphalt-800 text-paper hover:border-brand hover:text-brand"
+              }`}
+            >
+              <svg aria-hidden="true" viewBox="0 0 16 16" className="h-4 w-4" fill="currentColor">
+                <rect x="1" y="9" width="3" height="6" rx="1" />
+                <rect x="6.5" y="4" width="3" height="11" rx="1" />
+                <rect x="12" y="1" width="3" height="14" rx="1" />
+              </svg>
+              {verEstadisticasLeads ? "Ocultar estadísticas de leads" : "Estadísticas de leads"}
+            </button>
+            <button
+              type="button"
+              aria-expanded={verCreadores}
+              onClick={() => {
+                setVerCreadores((v) => !v);
+                setVerEstadisticasLeads(false);
+                setVerAsesores(false);
+              }}
+              className={`flex items-center gap-2 rounded-full border px-4 py-2 font-display text-sm font-semibold uppercase tracking-wide transition-colors ${
+                verCreadores
+                  ? "border-brand bg-brand text-asphalt-900"
+                  : "border-line bg-asphalt-800 text-paper hover:border-brand hover:text-brand"
+              }`}
+            >
+              <svg aria-hidden="true" viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                <circle cx="5" cy="5" r="2.3" />
+                <circle cx="11" cy="5" r="2.3" />
+                <path d="M1.5 14c0-2.2 1.6-3.8 3.5-3.8S8.5 11.8 8.5 14" />
+                <path d="M7.5 14c0-2.2 1.6-3.8 3.5-3.8s3.5 1.6 3.5 3.8" />
+              </svg>
+              {verCreadores ? "Ocultar métricas creadores" : "Métricas creadores"}
+            </button>
+            <button
+              type="button"
+              aria-expanded={verAsesores}
+              onClick={() => {
+                setVerAsesores((v) => !v);
+                setVerEstadisticasLeads(false);
+                setVerCreadores(false);
+              }}
+              className={`flex items-center gap-2 rounded-full border px-4 py-2 font-display text-sm font-semibold uppercase tracking-wide transition-colors ${
+                verAsesores
+                  ? "border-brand bg-brand text-asphalt-900"
+                  : "border-line bg-asphalt-800 text-paper hover:border-brand hover:text-brand"
+              }`}
+            >
+              <svg aria-hidden="true" viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="8" cy="4.5" r="2.5" />
+                <path d="M3 14c0-2.8 2.2-4.6 5-4.6s5 1.8 5 4.6" />
+                <path d="M11.5 2.5l1.2 1.2 2-2.2" />
+              </svg>
+              {verAsesores ? "Ocultar asignación de asesores" : "Asignación de asesores"}
+            </button>
+          </div>
+          {verAsesores && (
+            <>
+              <SectionHeading tag="Asesores" title="Asignación de asesores" iconSrc="/icon-whatsapp.png" iconBg="bg-white" />
+              <AdvisorsStats rows={asignacionesRaw.data} />
+            </>
+          )}
+          {verCreadores && (
+            <>
+              <SectionHeading tag="Creadores" title="Métricas creadores" iconSrc="/logo.png" iconBg="bg-white" />
+              <CreatorsStats rows={creadoresRaw.data} />
+            </>
+          )}
+          {verEstadisticasLeads && (
+            <>
+              <SectionHeading tag="Leads" title="Estadísticas de leads" iconSrc="/icon-forms.png" />
+              <LeadsStats rows={leadsDetalleRaw.data} />
+            </>
+          )}
+
+          {/* Mientras se ven las estadísticas de leads, se ocultan las demás secciones */}
+          {!vistaEspecial && (
+            <>
           {/* Comparación anual 2025 vs 2026 */}
           {esAnual && (
             <>
@@ -409,6 +508,8 @@ export default function DashboardPage() {
                 <CompareBarChart title="Moto de interés (más consultadas)" data={leadsMotoData} labelA={labelA} labelB={labelB} />
                 <CompareBarChart title="¿A quien vio o quien lo atendio?" data={leadsRecomiendaData} labelA={labelA} labelB={labelB} />
               </div>
+            </>
+          )}
             </>
           )}
         </>
