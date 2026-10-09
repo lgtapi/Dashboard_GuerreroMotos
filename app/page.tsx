@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { MonthSwitcher } from "@/components/MonthSwitcher";
 import { CompareBarChart } from "@/components/CompareBarChart";
+import { OverlayCompareChart } from "@/components/OverlayCompareChart";
+import { MonthlyYearCompare } from "@/components/MonthlyYearCompare";
 import { PlatformCompareChart } from "@/components/PlatformCompareChart";
 import { PlatformTimelineChart } from "@/components/PlatformTimelineChart";
 import { PlatformSection, SectionHeading } from "@/components/PlatformSection";
@@ -55,6 +57,7 @@ export default function DashboardPage() {
   const [vista, setVista] = useState<Vista>("mensual");
 
   const redesRaw = useSheetTab<SheetRow[]>("Redes_LookerStudio");
+  const redes2025Raw = useSheetTab<SheetRow[]>("2025_Redes_LookerStudio");
   const fbFormatosRaw = useSheetTab<SheetRow[]>("Facebook_Formatos");
   const waHistoricoRaw = useSheetTab<SheetRow[]>("WhatsApp_Historico");
   const waCanalRaw = useSheetTab<SheetRow[]>("WhatsApp_Canal");
@@ -63,7 +66,39 @@ export default function DashboardPage() {
   const leadsDetalleRaw = useSheetTab<SheetRow[]>("Leads_Detalle");
   const campanasRaw = useSheetTab<SheetRow[]>("Campanas_Historico");
 
-  const redes = { ...redesRaw, data: usePeriodo(redesRaw.data, "Mes", vista) };
+  // Vista ANUAL: se compara 2025 (hoja 2025_Redes_LookerStudio) contra 2026
+  // (hoja Redes_LookerStudio). Para que sea justo, de 2025 se toman solo los
+  // mismos meses que ya tiene 2026 (p. ej. enero–septiembre contra enero–septiembre).
+  const mesesDe2026 = useMemo(
+    () => [...new Set((redesRaw.data ?? []).map((r) => String(r.Mes).slice(5, 7)))].sort(),
+    [redesRaw.data]
+  );
+  const redesBase = useMemo(() => {
+    if (vista !== "anual" || !redesRaw.data) return redesRaw.data;
+    const de2025 = (redes2025Raw.data ?? []).filter(
+      (r) => String(r.Mes).startsWith("2025-") && mesesDe2026.includes(String(r.Mes).slice(5, 7))
+    );
+    return [...de2025, ...redesRaw.data];
+  }, [vista, redesRaw.data, redes2025Raw.data, mesesDe2026]);
+  const redes = { ...redesRaw, data: usePeriodo(redesBase, "Mes", vista) };
+
+  // Métricas de la comparación anual (se buscan por nombre aproximado)
+  const metricasAnuales = useMemo(() => {
+    const columnas = Object.keys((redesRaw.data ?? [])[0] ?? {});
+    const buscar = (patron: RegExp) => columnas.find((c) => patron.test(c));
+    return [
+      buscar(/total.*seguid|seguid.*total/i),
+      buscar(/seguid.*nuev/i),
+      buscar(/seguid.*perd/i),
+      buscar(/^visualiz/i),
+    ].filter((c): c is string => !!c);
+  }, [redesRaw.data]);
+  const esAnual = vista === "anual";
+  const NOMBRES_MES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  const rangoMeses =
+    mesesDe2026.length > 0
+      ? `${NOMBRES_MES[Number(mesesDe2026[0]) - 1]}–${NOMBRES_MES[Number(mesesDe2026[mesesDe2026.length - 1]) - 1]}`
+      : "";
   const fbFormatos = {
     ...fbFormatosRaw,
     data: usePeriodo(fbFormatosRaw.data, "Mes", vista, ["Formato", "Categoría"]),
@@ -93,8 +128,8 @@ export default function DashboardPage() {
   }
 
   const notasPeriodos = useMemo(
-    () => coberturaPeriodos(redesRaw.data, "Mes", vista),
-    [redesRaw.data, vista]
+    () => coberturaPeriodos(redesBase, "Mes", vista),
+    [redesBase, vista]
   );
 
   useEffect(() => {
@@ -109,6 +144,26 @@ export default function DashboardPage() {
 
   const labelA = mesLabel(mesA);
   const labelB = mesLabel(mesB);
+
+  // Una gráfica por métrica: cada plataforma con su valor en el año A y el año B
+  const anualesData = useMemo(() => {
+    if (!esAnual || !redes.data) return [];
+    const plataformas = [...new Set(redes.data.map((r) => String(r.Plataforma ?? "").trim()).filter(Boolean))];
+    return metricasAnuales
+      .map((metrica) => ({
+        metrica,
+        data: plataformas
+          .map((p) => {
+            const fila = (periodo: string) =>
+              redes.data!.find((r) => String(r.Mes) === periodo && String(r.Plataforma ?? "").trim() === p);
+            const a = fila(mesA)?.[metrica];
+            const b = fila(mesB)?.[metrica];
+            return { name: p, a: typeof a === "number" ? a : 0, b: typeof b === "number" ? b : 0, conDato: typeof a === "number" || typeof b === "number" };
+          })
+          .filter((d) => d.conDato),
+      }))
+      .filter((m) => m.data.length > 0);
+  }, [esAnual, redes.data, metricasAnuales, mesA, mesB]);
 
   // Comparativo cruzado por plataforma (Visualizaciones), a partir de Redes_LookerStudio
   const plataformasChartData = useMemo(() => {
@@ -271,6 +326,30 @@ export default function DashboardPage() {
             />
           </div>
 
+          {/* Comparación anual 2025 vs 2026 */}
+          {esAnual && (
+            <>
+              <SectionHeading tag="Anual" title={`Comparación anual ${labelA} vs ${labelB}`} iconSrc="/logo.png" iconBg="bg-white" />
+              <p className="-mt-1 mb-4 text-sm text-neutral-500">
+                Se comparan los mismos meses en ambos años ({rangoMeses}). Total seguidores toma el valor al cierre del último mes; las demás métricas se suman.
+              </p>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {anualesData.map((m) => (
+                  <OverlayCompareChart key={m.metrica} title={`${m.metrica} por plataforma`} data={m.data} labelA={labelA} labelB={labelB} />
+                ))}
+              </div>
+
+              {/* Mismo diseño, con filtro por mes y por red social */}
+              <div className="mt-4">
+                <MonthlyYearCompare
+                  anterior={(redes2025Raw.data ?? []).filter((r) => String(r.Mes).startsWith("2025-"))}
+                  actual={redesRaw.data}
+                  metricas={metricasAnuales}
+                />
+              </div>
+            </>
+          )}
+
           {/* Comparativo general entre plataformas */}
           {plataformasChartData.length > 0 && (
             <>
@@ -280,10 +359,10 @@ export default function DashboardPage() {
           )}
 
           {/* Instagram · datos de Redes_LookerStudio */}
-          <PlatformSection tag="Instagram" title="Instagram" iconSrc="/icon-instagram.png" rows={redes.data} mesA={mesA} mesB={mesB} dateField="Mes" platformFilter="Instagram" graficas />
+          <PlatformSection tag="Instagram" title="Instagram" iconSrc="/icon-instagram.png" rows={redes.data} mesA={mesA} mesB={mesB} dateField="Mes" platformFilter="Instagram" graficas soloMetricas={esAnual ? metricasAnuales : undefined} />
 
           {/* Facebook */}
-          <PlatformSection tag="Facebook" title="Facebook" iconSrc="/icon-facebook.png" rows={redes.data} mesA={mesA} mesB={mesB} dateField="Mes" platformFilter="Facebook" graficas />
+          <PlatformSection tag="Facebook" title="Facebook" iconSrc="/icon-facebook.png" rows={redes.data} mesA={mesA} mesB={mesB} dateField="Mes" platformFilter="Facebook" graficas soloMetricas={esAnual ? metricasAnuales : undefined} />
           {formatosData.length > 0 && (
             <div className="mt-4">
               <CompareBarChart title="Visualizaciones por formato de contenido" data={formatosData} labelA={labelA} labelB={labelB} />
@@ -301,7 +380,7 @@ export default function DashboardPage() {
           <PlatformSection tag="Campañas FB" title="Campañas · Facebook" iconSrc="/icon-facebook.png" rows={campanas.data} mesA={mesA} mesB={mesB} dateField="Fecha" platformFilter="Facebook" />
 
           {/* TikTok */}
-          <PlatformSection tag="TikTok" title="TikTok" iconSrc="/icon-tiktok.png" rows={redes.data} mesA={mesA} mesB={mesB} dateField="Mes" platformFilter="TikTok" graficas />
+          <PlatformSection tag="TikTok" title="TikTok" iconSrc="/icon-tiktok.png" rows={redes.data} mesA={mesA} mesB={mesB} dateField="Mes" platformFilter="TikTok" graficas soloMetricas={esAnual ? metricasAnuales : undefined} />
 
           {/* WhatsApp */}
           <PlatformSection tag="WhatsApp" title="WhatsApp" iconSrc="/icon-whatsapp.png" rows={waHistorico.data} mesA={mesA} mesB={mesB} />

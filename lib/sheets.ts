@@ -136,6 +136,7 @@ export function corregirMiles(rows: SheetRow[], tab = ""): SheetRow[] {
 // línea de la pestaña.
 const ANIO_DE_PESTANA: Record<string, number> = {
   Redes_LookerStudio: 2026,
+  "2025_Redes_LookerStudio": 2025,
 };
 
 function fijarAnio(rows: SheetRow[], anio: number | undefined): SheetRow[] {
@@ -174,7 +175,7 @@ export async function fetchSheetTab(tab: string): Promise<SheetRow[]> {
   }
 
   const cols: string[] = data.table.cols.map(
-    (c: { label?: string; id: string }, i: number) => c.label || c.id || `col_${i}`
+    (c: { label?: string; id: string }, i: number) => (c.label || c.id || `col_${i}`).trim()
   );
 
   const rows: SheetRow[] = (data.table.rows || []).map((r: { c: ({ v: unknown; f?: string } | null)[] }) => {

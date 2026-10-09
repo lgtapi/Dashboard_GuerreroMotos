@@ -57,6 +57,7 @@ export function PlatformSection({
   dateField = "Fecha",
   platformFilter,
   graficas = false,
+  soloMetricas,
 }: {
   tag: string;
   title: string;
@@ -67,6 +68,7 @@ export function PlatformSection({
   dateField?: "Fecha" | "Mes";
   platformFilter?: string;
   graficas?: boolean;
+  soloMetricas?: string[]; // si se indica, solo se muestran estas métricas (en este orden)
 }) {
   const [seleccion, setSeleccion] = useState<string[]>([]);
   const alternar = (key: string) =>
@@ -81,7 +83,8 @@ export function PlatformSection({
   // Solo se muestran las métricas que tienen un valor real (no null) en alguno
   // de los dos periodos comparados.
   const tieneValor = (key: string) => typeof rowA?.[key] === "number" || typeof rowB?.[key] === "number";
-  const keys = [...new Set([...metricKeysFromRow(rowA), ...metricKeysFromRow(rowB)])].filter(tieneValor);
+  const todas = [...new Set([...metricKeysFromRow(rowA), ...metricKeysFromRow(rowB)])].filter(tieneValor);
+  const keys = soloMetricas ? soloMetricas.filter((k) => todas.includes(k)) : todas;
 
   if (keys.length === 0) return null;
 
