@@ -175,7 +175,13 @@ export default function DashboardPage() {
       .filter((m) => m.data.length > 0);
   }, [esAnual, redes.data, metricasAnuales, mesA, mesB]);
 
-  // Comparativo cruzado por plataforma (Visualizaciones), a partir de Redes_LookerStudio
+  // Métrica de la primera gráfica: "Total seguidores" (si la hoja no la tiene, Visualizaciones)
+  const metricaPrincipal = useMemo(() => {
+    const columnas = Object.keys((redesRaw.data ?? [])[0] ?? {});
+    return columnas.find((c) => /total.*seguid|seguid.*total/i.test(c)) ?? "Visualizaciones";
+  }, [redesRaw.data]);
+
+  // Comparativo cruzado por plataforma, a partir de Redes_LookerStudio
   const plataformasChartData = useMemo(() => {
     if (!redes.data || !mesA || !mesB) return [];
     const plataformas = [...new Set(redes.data.map((r) => r.Plataforma))];
@@ -185,12 +191,12 @@ export default function DashboardPage() {
         const rowB = redes.data!.find((r) => r.Plataforma === p && String(r.Mes) === mesB);
         return {
           platform: p,
-          a: typeof rowA?.Visualizaciones === "number" ? rowA.Visualizaciones : 0,
-          b: typeof rowB?.Visualizaciones === "number" ? rowB.Visualizaciones : 0,
+          a: typeof rowA?.[metricaPrincipal] === "number" ? (rowA[metricaPrincipal] as number) : 0,
+          b: typeof rowB?.[metricaPrincipal] === "number" ? (rowB[metricaPrincipal] as number) : 0,
         };
       })
       .filter((d) => d.a > 0 || d.b > 0);
-  }, [redes.data, mesA, mesB]);
+  }, [redes.data, mesA, mesB, metricaPrincipal]);
 
   // Comparativo de campañas pagadas (Gasto) entre Instagram y Facebook
   const campanasChartData = useMemo(() => {
@@ -452,8 +458,8 @@ export default function DashboardPage() {
           {/* Comparativo general entre plataformas */}
           {plataformasChartData.length > 0 && (
             <>
-              <SectionHeading tag="General" title="Visualizaciones por plataforma" iconSrc="/logo.png" iconBg="bg-white" />
-              <PlatformTimelineChart rows={redes.data ?? []} mesA={mesA} mesB={mesB} />
+              <SectionHeading tag="General" title={`${metricaPrincipal} por plataforma`} iconSrc="/logo.png" iconBg="bg-white" />
+              <PlatformTimelineChart rows={redes.data ?? []} metrica={metricaPrincipal} mesA={mesA} mesB={mesB} />
             </>
           )}
 
