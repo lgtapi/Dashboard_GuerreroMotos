@@ -5,9 +5,6 @@
 // Se usa el formato JSON (no CSV) porque las fechas vienen codificadas de forma
 // explícita como Date(año, mesIndex, día), sin depender del locale del CSV.
 
-import { normalizarMes } from "./fechas";
-export { normalizarMes };
-
 export type SheetRow = Record<string, string | number | null>;
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID;
@@ -37,6 +34,33 @@ function parseGvizDate(raw: string): string {
 // distintos (tres "Sep 26" en el eje). Por eso toda columna de fecha se lleva a
 // la clave única "AAAA-MM-01".
 const COLUMNAS_FECHA = ["mes", "fecha"];
+
+const MESES_TEXTO: Record<string, number> = {
+  ene: 1, jan: 1, feb: 2, mar: 3, abr: 4, apr: 4, may: 5, jun: 6, jul: 7,
+  ago: 8, aug: 8, sep: 9, set: 9, oct: 10, nov: 11, dic: 12, dec: 12,
+};
+
+const claveMes = (anio: number, mes: number) =>
+  `${anio}-${String(mes).padStart(2, "0")}-01`;
+
+export function normalizarMes(valor: string | number | null): string | number | null {
+  if (typeof valor !== "string") return valor;
+  const texto = valor.trim().toLowerCase();
+  if (!texto) return valor;
+
+  let m = /^(\d{4})[-/.](\d{1,2})(?:[-/.]\d{1,2})?/.exec(texto); // 2026-09-11, 2026/09
+  if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) return claveMes(Number(m[1]), Number(m[2]));
+
+  m = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})/.exec(texto); // 11/09/2026 (día/mes/año)
+  if (m && Number(m[2]) >= 1 && Number(m[2]) <= 12) return claveMes(Number(m[3]), Number(m[2]));
+
+  m = /([a-záéíóú]{3})[a-záéíóú]*\.?[\s\-/]*(?:de\s+)?(\d{4}|\d{2})\b/.exec(texto); // Septiembre 2026, sep-26
+  if (m && MESES_TEXTO[m[1]]) {
+    const anio = m[2].length === 2 ? 2000 + Number(m[2]) : Number(m[2]);
+    return claveMes(anio, MESES_TEXTO[m[1]]);
+  }
+  return valor;
+}
 
 function normalizarFechas(rows: SheetRow[]): SheetRow[] {
   return rows.map((row) => {
@@ -105,9 +129,7 @@ export function corregirMiles(rows: SheetRow[], tab = ""): SheetRow[] {
   return corregidas;
 }
 
-type Tabla = { cols: string[]; rows: ({ c: ({ v: unknown; f?: string } | null)[] } | null)[]; firma: string };
-
-async function leerTabla(tab: string): Promise<Tabla> {
+export async function fetchSheetTab(tab: string): Promise<SheetRow[]> {
   const url = gvizUrl(tab);
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
@@ -127,42 +149,17 @@ async function leerTabla(tab: string): Promise<Tabla> {
     throw new Error(`Google Sheets devolvió un error para "${tab}": ${msg}`);
   }
 
-  // Los encabezados se limpian de espacios (" Seguidores Nuevos" -> "Seguidores Nuevos")
   const cols: string[] = data.table.cols.map(
-    (c: { label?: string; id: string }, i: number) => (c.label || c.id || `col_${i}`).trim()
+    (c: { label?: string; id: string }, i: number) => c.label || c.id || `col_${i}`
   );
-  const rows = data.table.rows || [];
-  return { cols, rows, firma: JSON.stringify([cols, rows.slice(0, 5)]) };
-}
 
-// OJO: cuando se pide una pestaña que NO existe, Google no da error: devuelve
-// la PRIMERA hoja del archivo. Para no mostrar datos equivocados, se compara
-// con lo que Google devuelve para una pestaña inventada.
-const PESTANA_INEXISTENTE = "__pestana_que_no_existe__";
-let respaldo: { firma: string; hasta: number } | null = null;
-
-async function firmaDeRespaldo(): Promise<string> {
-  if (respaldo && respaldo.hasta > Date.now()) return respaldo.firma;
-  const { firma } = await leerTabla(PESTANA_INEXISTENTE);
-  respaldo = { firma, hasta: Date.now() + 60_000 };
-  return firma;
-}
-
-export type ResultadoPestana = { rows: SheetRow[]; encontrada: boolean };
-
-export async function fetchSheetTab(tab: string): Promise<ResultadoPestana> {
-  const [tabla, firmaRespaldo] = await Promise.all([leerTabla(tab), firmaDeRespaldo().catch(() => "")]);
-  // Si coincide con la respuesta de "pestaña inexistente", lo más probable es que
-  // la pestaña pedida no exista con ese nombre exacto.
-  const encontrada = tabla.firma !== firmaRespaldo;
-
-  const rows: SheetRow[] = tabla.rows.map((r) => {
+  const rows: SheetRow[] = (data.table.rows || []).map((r: { c: ({ v: unknown; f?: string } | null)[] }) => {
     const obj: SheetRow = {};
-    tabla.cols.forEach((colName, i) => {
-      obj[colName] = extractCellValue(r?.c?.[i] ?? null);
+    cols.forEach((colName, i) => {
+      obj[colName] = extractCellValue(r.c[i]);
     });
     return obj;
   });
 
-  return { rows: corregirMiles(normalizarFechas(rows), tab), encontrada };
+  return corregirMiles(normalizarFechas(rows), tab);
 }

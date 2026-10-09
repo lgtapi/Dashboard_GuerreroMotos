@@ -13,9 +13,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Falta el parámetro ?tab=" }, { status: 400 });
   }
   try {
-    const { rows, encontrada } = await fetchSheetTab(tab);
+    const rows = await fetchSheetTab(tab);
     return NextResponse.json(
-      { tab, rows, encontrada },
+      { tab, rows },
       { headers: { "Cache-Control": "no-store, max-age=0" } }
     );
   } catch (err) {

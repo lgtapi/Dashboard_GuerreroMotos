@@ -6,8 +6,7 @@ type Regla = "suma" | "promedio" | "ultimo";
 
 export function reglaDeAgregacion(columna: string): Regla {
   const key = columna.toLowerCase();
-  // Totales acumulados (seguidores, usuarios): en un trimestre o año vale el último mes
-  if (key === "total usuarios" || (key.includes("total") && key.includes("seguidor")) || key.includes("seguidores totales")) return "ultimo";
+  if (key === "total usuarios") return "ultimo";
   if (
     key.includes("alcance") ||
     key === "usuarios" ||
