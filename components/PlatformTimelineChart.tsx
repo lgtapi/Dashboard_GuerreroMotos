@@ -23,13 +23,15 @@ import {
   colorDePeriodo,
 } from "@/components/MetricTrendChart";
 
+// Colores de la marca Guerrero Motos: naranja, ámbar y crema.
+// Se distinguen también por lo claro/oscuro, no solo por el tono.
 const COLOR_PLATAFORMA: Record<string, string> = {
-  facebook: "#4c8dff",
-  instagram: "#e1306c",
-  tiktok: "#3fd6c6",
-  whatsapp: "#4ade80",
+  facebook: "#ff5803",
+  instagram: "#ffb23c",
+  tiktok: "#f2e6d8",
+  whatsapp: "#cc4602",
 };
-const COLORES_EXTRA = ["#a78bfa", "#facc15", "#f472b6", "#94a3b8"];
+const COLORES_EXTRA = ["#cc4602", "#c9b49c", "#ff9a5c", "#6b6259"];
 
 const corto = (numero: number) =>
   Math.abs(numero) >= 1000
@@ -123,7 +125,7 @@ export function PlatformTimelineChart({
               </span>
             ))}
             <span className="flex items-center gap-1.5">
-              <i className="inline-block h-2.5 w-2.5 rounded-sm border border-brand/60 bg-brand/20" />
+              <i className="inline-block h-2.5 w-2.5 rounded-sm border border-white/30 bg-white/10" />
               Franja = periodos comparados ({mesLabel(mesA)} y {mesLabel(mesB)})
             </span>
           </>
@@ -174,8 +176,8 @@ export function PlatformTimelineChart({
             <ReferenceArea
               x1={cortoA}
               x2={cortoA}
-              fill={COLOR_A}
-              fillOpacity={0.14}
+              fill="#ffffff"
+              fillOpacity={0.06}
               stroke="none"
               ifOverflow="visible"
             />
@@ -183,8 +185,8 @@ export function PlatformTimelineChart({
               <ReferenceArea
                 x1={cortoB}
                 x2={cortoB}
-                fill={COLOR_B}
-                fillOpacity={0.14}
+                fill="#ffffff"
+                fillOpacity={0.1}
                 stroke="none"
                 ifOverflow="visible"
               />
