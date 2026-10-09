@@ -129,6 +129,30 @@ export function corregirMiles(rows: SheetRow[], tab = ""): SheetRow[] {
   return corregidas;
 }
 
+// AÑO DE CADA PESTAÑA
+// Redes_LookerStudio contiene los datos de 2026, pero en la hoja la columna Mes
+// quedó con fechas de 2025. Aquí se fija el año correcto: todas las fechas de
+// esa pestaña se leen como 2026 (el mes se respeta). Para quitarlo, borra la
+// línea de la pestaña.
+const ANIO_DE_PESTANA: Record<string, number> = {
+  Redes_LookerStudio: 2026,
+};
+
+function fijarAnio(rows: SheetRow[], anio: number | undefined): SheetRow[] {
+  if (!anio) return rows;
+  return rows.map((row) => {
+    const salida: SheetRow = { ...row };
+    for (const columna of Object.keys(salida)) {
+      if (!COLUMNAS_FECHA.includes(columna.trim().toLowerCase())) continue;
+      const valor = salida[columna];
+      if (typeof valor === "string" && /^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+        salida[columna] = `${anio}${valor.slice(4)}`;
+      }
+    }
+    return salida;
+  });
+}
+
 export async function fetchSheetTab(tab: string): Promise<SheetRow[]> {
   const url = gvizUrl(tab);
   const res = await fetch(url, { cache: "no-store" });
@@ -161,5 +185,5 @@ export async function fetchSheetTab(tab: string): Promise<SheetRow[]> {
     return obj;
   });
 
-  return corregirMiles(normalizarFechas(rows), tab);
+  return corregirMiles(fijarAnio(normalizarFechas(rows), ANIO_DE_PESTANA[tab]), tab);
 }
