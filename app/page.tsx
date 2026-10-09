@@ -155,8 +155,9 @@ export default function DashboardPage() {
         name: f.replace(/_/g, " "),
         a: typeof rowA?.Valor === "number" ? rowA.Valor : 0,
         b: typeof rowB?.Valor === "number" ? rowB.Valor : 0,
+        conDato: typeof rowA?.Valor === "number" || typeof rowB?.Valor === "number",
       };
-    });
+    }).filter((d) => d.conDato);
   }, [fbFormatos.data, mesA, mesB]);
 
   function waAsesorData(campo: string) {
@@ -170,8 +171,9 @@ export default function DashboardPage() {
         name: asesor,
         a: typeof rowA?.[campo] === "number" ? (rowA[campo] as number) : 0,
         b: typeof rowB?.[campo] === "number" ? (rowB[campo] as number) : 0,
+        conDato: typeof rowA?.[campo] === "number" || typeof rowB?.[campo] === "number",
       };
-    });
+    }).filter((d) => d.conDato);
   }
   const waAsignadasData = useMemo(() => waAsesorData("Conversaciones asignadas"), [waAsesor.data, mesA, mesB]);
   const waFinalizadasData = useMemo(() => waAsesorData("Conversaciones finalizadas"), [waAsesor.data, mesA, mesB]);
@@ -187,8 +189,9 @@ export default function DashboardPage() {
         name: canal,
         a: typeof rowA?.Conversaciones === "number" ? (rowA.Conversaciones as number) : 0,
         b: typeof rowB?.Conversaciones === "number" ? (rowB.Conversaciones as number) : 0,
+        conDato: typeof rowA?.Conversaciones === "number" || typeof rowB?.Conversaciones === "number",
       };
-    });
+    }).filter((d) => d.conDato);
   }, [waCanal.data, mesA, mesB]);
 
   const leadsCanalData = useMemo(

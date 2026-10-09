@@ -99,7 +99,9 @@ export function compareCountsByField(
     const mes = String(r[dateField]);
     if (mes !== mesA && mes !== mesB) continue;
     const raw = r[field];
-    const value = raw === null || raw === undefined || raw === "" ? "Sin dato" : String(raw);
+    // Los registros sin dato (vacío o "null") no se muestran en la gráfica.
+    if (raw === null || raw === undefined || String(raw).trim() === "" || String(raw).trim().toLowerCase() === "null") continue;
+    const value = String(raw);
     const entry = counts.get(value) || { a: 0, b: 0 };
     if (mes === mesA) entry.a += 1;
     if (mes === mesB) entry.b += 1;

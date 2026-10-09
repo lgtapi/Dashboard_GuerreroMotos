@@ -78,7 +78,10 @@ export function PlatformSection({
 
   const rowA = findRowByMonth(scoped, mesA, dateField);
   const rowB = findRowByMonth(scoped, mesB, dateField);
-  const keys = metricKeysFromRow(rowA).length ? metricKeysFromRow(rowA) : metricKeysFromRow(rowB);
+  // Solo se muestran las métricas que tienen un valor real (no null) en alguno
+  // de los dos periodos comparados.
+  const tieneValor = (key: string) => typeof rowA?.[key] === "number" || typeof rowB?.[key] === "number";
+  const keys = [...new Set([...metricKeysFromRow(rowA), ...metricKeysFromRow(rowB)])].filter(tieneValor);
 
   if (keys.length === 0) return null;
 

@@ -74,6 +74,10 @@ function normalizarFechas(rows: SheetRow[]): SheetRow[] {
   });
 }
 
+// Celdas que en la hoja dicen "null" (o equivalentes) se tratan como vacías,
+// para que el dashboard no las muestre.
+const VALORES_NULOS = new Set(["null", "nulo", "n/a", "na", "#n/a", "-", "—", ""]);
+
 function extractCellValue(cell: { v: unknown; f?: string } | null): string | number | null {
   if (cell === null || cell === undefined) return null;
   const v = cell.v;
@@ -81,6 +85,7 @@ function extractCellValue(cell: { v: unknown; f?: string } | null): string | num
   if (typeof v === "string" && v.startsWith("Date(")) {
     return parseGvizDate(v);
   }
+  if (typeof v === "string" && VALORES_NULOS.has(v.trim().toLowerCase())) return null;
   if (typeof v === "number" || typeof v === "string") return v;
   return cell.f ?? null;
 }
